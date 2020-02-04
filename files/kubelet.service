@@ -1,0 +1,14 @@
+[Unit]
+Description=Kubernetes kubelet
+After=docker.service
+After=syslog.target
+Wants=docker.service
+
+[Service]
+Restart=always
+RestartSec=10
+EnvironmentFile=/etc/default/kubelet
+ExecStart=/usr/local/bin/kubelet $KUBELET_OPTS
+
+[Install]
+WantedBy=multi-user.target

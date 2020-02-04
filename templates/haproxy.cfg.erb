@@ -1,0 +1,12 @@
+global
+  #debug
+
+listen apiserver
+  bind 0.0.0.0:8443
+  mode tcp
+  balance roundrobin
+<% if !@k8s_apiservers.nil? -%>
+<% @k8s_apiservers.each do |key,value| -%>
+  server <%= key %> <%= value %> check
+<% end -%>
+<% end %>

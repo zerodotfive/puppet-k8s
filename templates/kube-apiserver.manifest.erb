@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: kube-apiserver
+    image: gcr.io/google-containers/kube-apiserver-amd64:v<%= @k8s_version %>
+    command:
+    - "/usr/local/bin/kube-apiserver"
+    - "--bind-address=<%= @k8s_internal_ip %>"
+    - "--insecure-bind-address=127.0.0.1"
+    - "--etcd-servers=<%= @k8s_etcd_urls %>"
+    - "--enable-bootstrap-token-auth=true"
+    - "--admission-control=NamespaceLifecycle,NamespaceExists,LimitRanger,ServiceAccount,ResourceQuota,NodeRestriction"
+    - "--kubelet-preferred-address-types=InternalIP"
+    - "--service-cluster-ip-range=<%= @k8s_service_cluster_ip_range %>"
+    - "--client-ca-file=/var/lib/kube-apiserver/pki/ca.crt"
+    - "--service-account-key-file=/var/lib/kube-apiserver/pki/service-accounts.crt"
+    - "--tls-cert-file=/var/lib/kube-apiserver/pki/apiserver.crt"
+    - "--tls-private-key-file=/var/lib/kube-apiserver/pki/apiserver.key"
+    - "--secure-port=6443"
+    - "--apiserver-count=3"
+    - "--runtime-config=api/all=true"
+    - "--authorization-mode=Node,RBAC"
+    - "--enable-bootstrap-token-auth=true"
+    - "--allow-privileged"
+    - "--v=0"
+    livenessProbe:
+      httpGet:
+        path: "/healthz"
+        host: 127.0.0.1
+        port: 8080
+      initialDelaySeconds: 300
+      timeoutSeconds: 300
+    ports:
+    - name: https
+      containerPort: 6443
+      hostPort: 6443
+    - name: local
+      containerPort: 8080
+      hostPort: 8080
+    volumeMounts:
+    - name: etcssl
+      mountPath: "/etc/ssl"
+      readOnly: true
+    - name: usrshareca
+      mountPath: "/usr/share/ca-certificates"
+      readOnly: true
+    - name: kubeapiserver
+      mountPath: "/var/lib/kube-apiserver"
+      readOnly: true
+  volumes:
+  - name: etcssl
+    hostPath:
+      path: "/etc/ssl"
+  - name: usrshareca
+    hostPath:
+      path: "/usr/share/ca-certificates"
+  - name: kubeapiserver
+    hostPath:
+      path: "/var/lib/kube-apiserver"

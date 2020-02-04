@@ -1,0 +1,58 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-controller-manager
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: kube-controller-manager
+    image: gcr.io/google-containers/kube-controller-manager-amd64:v<%= @k8s_version %>
+    resources:
+      limits:
+        cpu: 200m
+    command:
+    - "/usr/local/bin/kube-controller-manager"
+    - "--kubeconfig=/var/lib/kube-controller-manager/kubeconfig"
+    - "--use-service-account-credentials=true"
+    - "--controllers=*,tokencleaner"
+    - "--service-account-private-key-file=/var/lib/kube-controller-manager/pki/service-accounts.key"
+    - "--cluster-signing-cert-file=/var/lib/kube-controller-manager/pki/ca.crt"
+    - "--cluster-signing-key-file=/var/lib/kube-controller-manager/pki/ca.key"
+    - "--root-ca-file=/var/lib/kube-controller-manager/pki/ca.crt"
+    - "--node-monitor-grace-period=2m0s"
+    - "--pod-eviction-timeout=0m30s"
+    - "--leader-elect"
+    - "--service-cluster-ip-range=<%= @k8s_service_cluster_ip_range %>"
+    - "--cluster-cidr=<%= @k8s_cluster_cidr %>"
+    - "--allocate-node-cidrs=true"
+    - "--node-cidr-mask-size=<%= @k8s_node_cidr_mask_size %>"
+    - "--v=0"
+    livenessProbe:
+      httpGet:
+        path: "/healthz"
+        host: 127.0.0.1
+        port: 10252
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    volumeMounts:
+    - name: etcssl
+      mountPath: "/etc/ssl"
+      readOnly: true
+    - name: usrshareca
+      mountPath: "/usr/share/ca-certificates"
+      readOnly: true
+    - name: kubecontrollermanager
+      mountPath: "/var/lib/kube-controller-manager"
+      readOnly: true
+  volumes:
+  - name: etcssl
+    hostPath:
+      path: "/etc/ssl"
+  - name: usrshareca
+    hostPath:
+      path: "/usr/share/ca-certificates"
+  - name: kubecontrollermanager
+    hostPath:
+      path: "/var/lib/kube-controller-manager"

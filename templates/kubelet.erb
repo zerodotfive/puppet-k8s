@@ -1,0 +1,20 @@
+KUBELET_OPTS=" \
+--address=<%= @k8s_internal_ip %> \
+--node-ip=<%= @k8s_internal_ip %> \
+--allow-privileged=true \
+--max-pods=2048 \
+--cni-bin-dir=/opt/cni/bin \
+--network-plugin=cni \
+--cluster-domain=cluster.local \
+--cluster-dns=<%= @k8s_cluster_dns %> \
+--enable-debugging-handlers=true \
+<% if !@k8s_bootstrap_crt.nil? and !@k8s_bootstrap_key.nil? -%>--bootstrap-kubeconfig=/var/lib/kubelet/kubeconfig-bootstrap <% end %>--kubeconfig=/var/lib/kubelet/kubeconfig \
+--pod-manifest-path=/etc/kubernetes/manifests \
+--client-ca-file=/var/lib/kubelet/pki/ca.crt \
+--cert-dir=/var/lib/kubelet/pki \
+--cgroup-root=/ \
+--runtime-cgroups=/system.slice/docker.service \
+--kubelet-cgroups=/system.slice/kubelet.service \
+--eviction-hard=memory.available<100Mi,nodefs.available<10%,nodefs.inodesFree<5% \
+--feature-gates=ExperimentalCriticalPodAnnotation=true \
+<% if !@k8s_node_labels.nil? -%>--node-labels=\"<%= @k8s_node_labels %>\" <% end %><% if !@k8s_node_taints.nil? -%>--register-with-taints=\"<%= @k8s_node_taints %>\" <% end %> --v=0"
